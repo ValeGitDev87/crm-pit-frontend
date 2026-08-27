@@ -1,6 +1,6 @@
-# React + Vite
+# Prestito in Tasca — CRM Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend React del CRM Prestito in Tasca, basato su Vite.
 
 Currently, two official plugins are available:
 

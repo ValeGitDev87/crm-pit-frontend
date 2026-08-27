@@ -50,10 +50,10 @@ export function LoginPage() {
 
   return (
     <main className="login-page">
-      <section className="login-brand" aria-label="Pincredit CRM">
+      <section className="login-brand" aria-label="Prestito in Tasca CRM">
         <div className="brand-mark" aria-hidden="true">P</div>
         <div>
-          <p className="eyebrow">Pincredit</p>
+          <p className="eyebrow">Prestito in Tasca</p>
           <h1>Il lavoro commerciale, in un unico spazio.</h1>
           <p className="brand-copy">
             Accedi al CRM per gestire lead, pratiche e attività del team.
@@ -66,7 +66,7 @@ export function LoginPage() {
         <form className="login-card" onSubmit={handleSubmit} noValidate>
           <div className="mobile-brand">
             <span className="brand-mark brand-mark-small" aria-hidden="true">P</span>
-            <strong>Pincredit CRM</strong>
+            <strong>Prestito in Tasca CRM</strong>
           </div>
           <div className="form-heading">
             <p className="eyebrow">Bentornato</p>

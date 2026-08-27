@@ -32,7 +32,7 @@ export function AppShell() {
     <div className="app-shell">
       {menuOpen && <button className="sidebar-scrim" aria-label="Chiudi menu" type="button" onClick={() => setMenuOpen(false)} />}
       <aside className={`sidebar ${menuOpen ? 'sidebar-open' : ''}`} aria-label="Navigazione principale">
-        <div className="sidebar-brand"><span>P</span><strong>Pincredit</strong><small>CRM</small></div>
+        <div className="sidebar-brand"><span>P</span><strong>Prestito in Tasca</strong><small>CRM</small></div>
         <nav>
           <p className="nav-section">Workspace</p>
           {items.map((item) => (

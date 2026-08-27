@@ -1,4 +1,4 @@
-# CRM PIT Frontend — Codex Docs
+# Prestito in Tasca CRM Frontend — Codex Docs
 
 Copia il contenuto di questo pacchetto nella root del repository `frontend/`.
 

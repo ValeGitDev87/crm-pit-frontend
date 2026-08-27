@@ -1,7 +1,7 @@
-# AGENTS.md — CRM PIT Frontend
+# AGENTS.md — Prestito in Tasca CRM Frontend
 
 ## 1. Scopo
-Questo repository contiene esclusivamente il frontend React del CRM PIT.
+Questo repository contiene esclusivamente il frontend React del CRM Prestito in Tasca.
 
 Il backend Laravel è già implementato e l'API v1 è congelata. La fonte canonica del contratto backend inclusa in questo repository è:
 

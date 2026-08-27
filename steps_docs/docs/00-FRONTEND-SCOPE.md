@@ -1,7 +1,7 @@
 # 00 — Frontend Scope
 
 ## Obiettivo
-Realizzare il frontend React del CRM PIT consumando esclusivamente l'API Laravel v1 già congelata.
+Realizzare il frontend React del CRM Prestito in Tasca consumando esclusivamente l'API Laravel v1 già congelata.
 
 Il frontend deve essere pronto per una demo locale credibile e riutilizzabile in produzione.
 

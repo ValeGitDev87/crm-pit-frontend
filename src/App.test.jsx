@@ -176,6 +176,7 @@ describe('autenticazione applicazione', () => {
 
     expect(screen.getByText('Verifica della sessione…')).toBeInTheDocument()
     expect(await screen.findByRole('heading', { name: 'Ciao, Mario Rossi' })).toBeInTheDocument()
+    expect(screen.getByText('Prestito in Tasca', { selector: '.sidebar-brand strong' })).toBeInTheDocument()
     expect(screen.getByText('Admin')).toBeInTheDocument()
   })
 
@@ -192,6 +193,7 @@ describe('autenticazione applicazione', () => {
 
     renderApp('/dashboard')
     await screen.findByRole('heading', { name: 'Accedi al CRM' })
+    expect(screen.getByLabelText('Prestito in Tasca CRM')).toBeInTheDocument()
     await user.type(screen.getByLabelText('Email'), 'anna@example.test')
     await user.type(screen.getByLabelText('Password'), 'secret')
     await user.click(screen.getByRole('button', { name: 'Accedi' }))

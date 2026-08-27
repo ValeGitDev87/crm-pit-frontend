@@ -68,3 +68,5 @@ La Fase 06 è stata completata con cambio stato, note, creazione task, modifica 
 - Fase 11 completata il 2026-08-27: sync manuali Site/Meta, run e dettaglio, mapping, mapping richiesti e rielaborazione import.
 - Fase 12 completata il 2026-08-27: audit responsive/accessibilità, copy italiana, feedback errore/successo, modali e vincoli upload.
 - Fase 13 completata il 2026-08-27: audit route/API/errori, suite finale, build produzione e verifica patch Git.
+- Branding definitivo applicato il 2026-08-27: il nome visuale e documentale del CRM è `Prestito in Tasca`.
+- Fix autenticazione locale applicato il 2026-08-27: frontend e backend usano entrambi `localhost`, evitando la separazione dei cookie Sanctum tra `localhost` e `127.0.0.1`.

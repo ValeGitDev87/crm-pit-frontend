@@ -12,9 +12,11 @@ describe('apiRequest', () => {
   beforeEach(() => {
     resetApiClientState()
     vi.restoreAllMocks()
+    document.cookie = 'XSRF-TOKEN=; Max-Age=0; path=/'
   })
 
   it('usa cookie di sessione, inizializza CSRF e serializza il payload', async () => {
+    document.cookie = 'XSRF-TOKEN=csrf-token; path=/'
     const fetchMock = vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(new Response(null, { status: 204 }))
       .mockResolvedValueOnce(jsonResponse({ data: { id: 1 } }))
@@ -26,12 +28,12 @@ describe('apiRequest', () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      'http://127.0.0.1:8000/sanctum/csrf-cookie',
+      'http://localhost:8000/sanctum/csrf-cookie',
       expect.objectContaining({ credentials: 'include' }),
     )
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      'http://127.0.0.1:8000/api/v1/auth/login',
+      'http://localhost:8000/api/v1/auth/login',
       expect.objectContaining({
         credentials: 'include',
         method: 'POST',
@@ -40,6 +42,7 @@ describe('apiRequest', () => {
     )
     const requestHeaders = fetchMock.mock.calls[1][1].headers
     expect(requestHeaders.get('Content-Type')).toBe('application/json')
+    expect(requestHeaders.get('X-XSRF-TOKEN')).toBe('csrf-token')
   })
 
   it('rinnova CSRF e ripete la richiesta una sola volta dopo un 419', async () => {

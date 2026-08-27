@@ -63,7 +63,7 @@
 .sidebar { position: fixed; z-index: 30; inset: 0 auto 0 0; display: flex; width: 248px; flex-direction: column; padding: 24px 16px 18px; color: #dce8f8; background: var(--navy-950); box-shadow: 10px 0 40px rgba(7,28,61,.08); }
 .sidebar-brand { display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 8px; color: #fff; }
 .sidebar-brand > span { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 10px; color: var(--navy-950); background: #fff; font-size: 20px; font-weight: 900; }
-.sidebar-brand strong { font-size: 19px; letter-spacing: -.02em; }
+.sidebar-brand strong { font-size: 15px; letter-spacing: -.02em; white-space: nowrap; }
 .sidebar-brand small { margin-left: -5px; color: #7ea5d4; font-size: 10px; font-weight: 800; letter-spacing: .12em; }
 .sidebar nav { flex: 1; margin-top: 34px; }
 .nav-section { margin: 0 10px 12px; color: #6f8fb6; font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
