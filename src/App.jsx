@@ -1,122 +1,61 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
+import { AuthLoadingState } from './components/feedback/AuthLoadingState'
+import { SessionErrorState } from './components/feedback/SessionErrorState'
+import { AppShell } from './components/layout/AppShell'
+import { useAuth } from './hooks/useAuth'
+import { ComingSoonPage } from './pages/ComingSoonPage'
+import { DashboardPage } from './pages/DashboardPage'
+import { ForbiddenPage } from './pages/ForbiddenPage'
+import { LoginPage } from './pages/LoginPage'
+import { LeadsPage } from './pages/LeadsPage'
+import { LeadDetailPage } from './pages/LeadDetailPage'
+import { NotFoundPage } from './pages/NotFoundPage'
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
+function ProtectedRoute() {
+  const { isAuthenticated, loading, authError, refreshMe } = useAuth()
+  const location = useLocation()
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+  if (loading) return <AuthLoadingState />
+  if (authError) return <SessionErrorState message={authError.message} onRetry={refreshMe} />
+  if (!isAuthenticated) return <Navigate to="/login" replace state={{ from: location }} />
+  return <Outlet />
 }
 
-export default App
+function AdminRoute() {
+  const { user } = useAuth()
+  return user?.role === 'admin' ? <Outlet /> : <ForbiddenPage />
+}
+
+function HomeRedirect() {
+  const { isAuthenticated, loading, authError, refreshMe } = useAuth()
+
+  if (loading) return <AuthLoadingState />
+  if (authError) return <SessionErrorState message={authError.message} onRetry={refreshMe} />
+  return <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<HomeRedirect />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppShell />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/leads" element={<LeadsPage />} />
+          <Route path="/leads/:id" element={<LeadDetailPage />} />
+          <Route path="/practices/:id" element={<ComingSoonPage title="Pratica" description="Documenti e avanzamento della pratica." />} />
+          <Route element={<AdminRoute />}>
+            <Route path="/admin/users" element={<ComingSoonPage title="Utenti" description="Gestione degli account CRM." />} />
+            <Route path="/admin/statuses" element={<ComingSoonPage title="Stati lead" description="Configurazione del flusso commerciale." />} />
+            <Route path="/admin/origins" element={<ComingSoonPage title="Provenienze" description="Canali e distribuzione agli operatori." />} />
+            <Route path="/admin/recycles" element={<ComingSoonPage title="Ricircoli" description="Lead rientrati e riassegnazioni." />} />
+            <Route path="/admin/integrations" element={<ComingSoonPage title="Integrazioni" description="Sincronizzazioni sito e Meta." />} />
+          </Route>
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Route>
+    </Routes>
+  )
+}
