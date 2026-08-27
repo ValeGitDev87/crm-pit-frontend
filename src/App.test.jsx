@@ -13,19 +13,99 @@ vi.mock('./api/auth', () => ({
 }))
 
 vi.mock('./api/dashboard', () => ({ getDashboard: vi.fn() }))
-vi.mock('./api/leads', () => ({ getLeads: vi.fn(), getLead: vi.fn() }))
+vi.mock('./api/leads', () => ({
+  getLeads: vi.fn(),
+  getLead: vi.fn(),
+  getWorkflowStatuses: vi.fn(),
+  changeLeadStatus: vi.fn(),
+  addLeadNote: vi.fn(),
+  createLeadTask: vi.fn(),
+  updateLeadTask: vi.fn(),
+}))
 vi.mock('./api/admin', () => ({
   getAdminUsers: vi.fn(),
   getLeadStatuses: vi.fn(),
   getOrigins: vi.fn(),
   getOrigin: vi.fn(),
   assignLead: vi.fn(),
+  createAdminUser: vi.fn(),
+  updateAdminUser: vi.fn(),
+  createLeadStatus: vi.fn(),
+  updateLeadStatus: vi.fn(),
+  deleteLeadStatus: vi.fn(),
+  createOrigin: vi.fn(),
+  updateOrigin: vi.fn(),
+  deleteOrigin: vi.fn(),
+  updateOriginOperators: vi.fn(),
+  getRecycles: vi.fn(),
+  assignRecycle: vi.fn(),
+}))
+vi.mock('./api/practices', () => ({
+  getPractice: vi.fn(),
+  createPractice: vi.fn(),
+  requestDocument: vi.fn(),
+  uploadDocument: vi.fn(),
+  updateDocument: vi.fn(),
+  downloadDocument: vi.fn(),
+  addPracticeNote: vi.fn(),
+}))
+vi.mock('./api/integrations', () => ({
+  getIntegrationRuns: vi.fn(),
+  getIntegrationRun: vi.fn(),
+  startIntegrationSync: vi.fn(),
+  getIntegrationMappings: vi.fn(),
+  createIntegrationMapping: vi.fn(),
+  updateIntegrationMapping: vi.fn(),
+  reprocessImport: vi.fn(),
 }))
 
 import { currentUserRequest, loginRequest } from './api/auth'
 import { getDashboard } from './api/dashboard'
-import { getLead, getLeads } from './api/leads'
-import { assignLead, getAdminUsers, getLeadStatuses, getOrigin, getOrigins } from './api/admin'
+import {
+  addLeadNote,
+  changeLeadStatus,
+  createLeadTask,
+  getLead,
+  getLeads,
+  getWorkflowStatuses,
+  updateLeadTask,
+} from './api/leads'
+import {
+  assignLead,
+  createAdminUser,
+  createLeadStatus,
+  createOrigin,
+  deleteLeadStatus,
+  deleteOrigin,
+  getAdminUsers,
+  getLeadStatuses,
+  getOrigin,
+  getOrigins,
+  getRecycles,
+  updateAdminUser,
+  updateLeadStatus,
+  updateOrigin,
+  updateOriginOperators,
+  assignRecycle,
+} from './api/admin'
+import {
+  addPracticeNote,
+  createPractice,
+  downloadDocument,
+  getPractice,
+  requestDocument,
+  updateDocument,
+  uploadDocument,
+} from './api/practices'
+import {
+  createIntegrationMapping,
+  getIntegrationMappings,
+  getIntegrationRun,
+  getIntegrationRuns,
+  reprocessImport,
+  startIntegrationSync,
+  updateIntegrationMapping,
+} from './api/integrations'
 
 function renderApp(initialPath = '/') {
   return render(
@@ -46,11 +126,41 @@ describe('autenticazione applicazione', () => {
       sync_status: [],
     })
     getLeads.mockResolvedValue({ data: [], meta: { current_page: 1, last_page: 1, total: 0 } })
+    getWorkflowStatuses.mockResolvedValue([])
+    changeLeadStatus.mockResolvedValue({})
+    addLeadNote.mockResolvedValue({})
+    createLeadTask.mockResolvedValue({})
+    updateLeadTask.mockResolvedValue({})
     getAdminUsers.mockResolvedValue([])
     getLeadStatuses.mockResolvedValue([])
     getOrigins.mockResolvedValue([])
     getOrigin.mockResolvedValue({ operators: [] })
     assignLead.mockResolvedValue({})
+    createAdminUser.mockResolvedValue({})
+    updateAdminUser.mockResolvedValue({})
+    createLeadStatus.mockResolvedValue({})
+    updateLeadStatus.mockResolvedValue({})
+    deleteLeadStatus.mockResolvedValue({})
+    createOrigin.mockResolvedValue({})
+    updateOrigin.mockResolvedValue({})
+    deleteOrigin.mockResolvedValue({})
+    updateOriginOperators.mockResolvedValue({})
+    getRecycles.mockResolvedValue({ data: [], meta: { current_page: 1, last_page: 1, total: 0 } })
+    assignRecycle.mockResolvedValue({})
+    getPractice.mockResolvedValue({ id: 30, status: 'open', opened_at: '2026-08-27T10:00:00+02:00', documents: [], notes: [] })
+    createPractice.mockResolvedValue({})
+    requestDocument.mockResolvedValue({})
+    uploadDocument.mockResolvedValue({})
+    updateDocument.mockResolvedValue({})
+    downloadDocument.mockResolvedValue(new Blob(['documento'], { type: 'application/pdf' }))
+    addPracticeNote.mockResolvedValue({})
+    getIntegrationRuns.mockResolvedValue({ data: [], meta: { current_page: 1, last_page: 1, total: 0 } })
+    getIntegrationRun.mockResolvedValue({})
+    startIntegrationSync.mockResolvedValue({})
+    getIntegrationMappings.mockResolvedValue({ data: [], meta: { current_page: 1, last_page: 1, total: 0, mapping_required: [] } })
+    createIntegrationMapping.mockResolvedValue({})
+    updateIntegrationMapping.mockResolvedValue({})
+    reprocessImport.mockResolvedValue({})
   })
 
   it('ripristina una sessione valida con /auth/me e mostra la dashboard', async () => {
@@ -185,7 +295,7 @@ describe('autenticazione applicazione', () => {
     renderApp('/dashboard')
 
     expect(await screen.findByText('Lead globali')).toBeInTheDocument()
-    expect(screen.getByText('Sincronizzazione Site')).toBeInTheDocument()
+    expect(screen.getByText('Sincronizzazione Sito')).toBeInTheDocument()
     expect(screen.getByText('Anna Bianchi', { selector: 'strong' })).toBeInTheDocument()
   })
 
@@ -215,6 +325,7 @@ describe('autenticazione applicazione', () => {
     expect(await screen.findByText('Luca Verdi')).toBeInTheDocument()
     expect(screen.getByText('Rientrato x1')).toBeInTheDocument()
     expect(screen.getByText('Non assegnato')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Gestisci' })).toHaveAttribute('href', '/leads/10')
     await user.click(screen.getByRole('button', { name: 'Successiva' }))
     await waitFor(() => expect(getLeads).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 })))
   })
@@ -265,5 +376,199 @@ describe('autenticazione applicazione', () => {
 
     await waitFor(() => expect(assignLead).toHaveBeenCalledWith(10, '2'))
     expect(await screen.findByText('Lead riassegnato correttamente.')).toBeInTheDocument()
+  })
+
+  it('consente all’Operator di cambiare stato, aggiungere note e gestire task', async () => {
+    currentUserRequest.mockResolvedValue({ id: 2, name: 'Anna', email: 'anna@example.test', role: 'operator', active: true })
+    const lead = {
+      id: 10,
+      contact: { first_name: 'Luca', last_name: 'Verdi' },
+      origin: { id: 3, name: 'Sito' },
+      current_status: { id: 4, name: 'Nuovo', system_key: 'new', is_closed: false },
+      current_assigned_user: { id: 2, name: 'Anna' },
+      current_cycle_number: 1,
+      recycle_count: 0,
+      cycles: [{
+        id: 20, cycle_number: 1, trigger: 'initial', started_at: '2026-08-27T10:00:00+02:00',
+        assignments: [], status_history: [], notes: [], practice: { id: 30, status: 'open' },
+        tasks: [{ id: 40, title: 'Richiamare', note: '', type: 'callback', status: 'pending', due_at: '2026-08-28T10:00:00+02:00' }],
+      }],
+    }
+    getLead.mockResolvedValue(lead)
+    getWorkflowStatuses.mockResolvedValue([
+      { id: 4, name: 'Nuovo', system_key: 'new' },
+      { id: 5, name: 'Interessato', system_key: 'interested' },
+    ])
+    const user = userEvent.setup()
+
+    renderApp('/leads/10')
+    await screen.findByRole('heading', { name: 'Gestisci lead' })
+    await screen.findByRole('option', { name: 'Interessato' })
+
+    await user.selectOptions(screen.getByLabelText('Stato'), '5')
+    await user.click(screen.getByRole('button', { name: 'Aggiorna stato' }))
+    await waitFor(() => expect(changeLeadStatus).toHaveBeenCalledWith(10, '5'))
+
+    await user.type(screen.getByLabelText('Nota commerciale'), 'Cliente interessato')
+    await user.click(screen.getByRole('button', { name: 'Aggiungi nota' }))
+    await waitFor(() => expect(addLeadNote).toHaveBeenCalledWith(10, 'Cliente interessato'))
+
+    await user.type(screen.getByLabelText('Titolo'), 'Inviare documenti')
+    await user.type(screen.getAllByLabelText('Scadenza')[0], '2026-08-30T10:30')
+    await user.click(screen.getByRole('button', { name: 'Crea attività' }))
+    await waitFor(() => expect(createLeadTask).toHaveBeenCalledWith(10, expect.objectContaining({ type: 'callback', title: 'Inviare documenti' })))
+
+    await user.click(screen.getByRole('button', { name: 'Completa' }))
+    await waitFor(() => expect(updateLeadTask).toHaveBeenCalledWith(40, { status: 'completed' }))
+    expect(screen.getByRole('link', { name: 'Apri pratica' })).toHaveAttribute('href', '/practices/30')
+  })
+
+  it('consente all’Admin di creare e modificare utenti', async () => {
+    currentUserRequest.mockResolvedValue({ id: 1, name: 'Mario', email: 'mario@example.test', role: 'admin', active: true })
+    getAdminUsers.mockResolvedValue([{ id: 2, name: 'Anna', email: 'anna@example.test', role: 'operator', active: true, created_at: '2026-08-20T10:00:00+02:00' }])
+    const user = userEvent.setup()
+
+    renderApp('/admin/users')
+    expect(await screen.findByRole('heading', { name: 'Utenti' })).toBeInTheDocument()
+    expect(await screen.findByText('anna@example.test')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Modifica' }))
+    let dialog = screen.getByRole('dialog', { name: 'Modifica utente' })
+    await user.click(within(dialog).getByLabelText('Account attivo'))
+    await user.click(within(dialog).getByRole('button', { name: 'Salva utente' }))
+    await waitFor(() => expect(updateAdminUser).toHaveBeenCalledWith(2, expect.objectContaining({ active: false, role: 'operator' })))
+    expect(updateAdminUser.mock.calls[0][1]).not.toHaveProperty('password')
+
+    await user.click(screen.getByRole('button', { name: 'Nuovo utente' }))
+    dialog = screen.getByRole('dialog', { name: 'Nuovo utente' })
+    await user.type(within(dialog).getByLabelText('Nome'), 'Paolo Neri')
+    await user.type(within(dialog).getByLabelText('Email'), 'paolo@example.test')
+    await user.type(within(dialog).getByLabelText('Password'), 'password123')
+    await user.type(within(dialog).getByLabelText('Conferma password'), 'password123')
+    await user.click(within(dialog).getByRole('button', { name: 'Salva utente' }))
+
+    await waitFor(() => expect(createAdminUser).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'Paolo Neri', email: 'paolo@example.test', role: 'operator', active: true,
+    })))
+  })
+
+  it('consente all’Admin di modificare gli stati rispettando i campi protetti', async () => {
+    currentUserRequest.mockResolvedValue({ id: 1, name: 'Mario', email: 'mario@example.test', role: 'admin', active: true })
+    getLeadStatuses.mockResolvedValue([{ id: 4, name: 'Nuovo', system_key: 'new', sort_order: 1, active: true, is_closed: false, protected: true }])
+    const user = userEvent.setup()
+
+    renderApp('/admin/statuses')
+    expect(await screen.findByRole('heading', { name: 'Stati lead' })).toBeInTheDocument()
+    await screen.findByText('Protetto')
+    await user.click(screen.getByRole('button', { name: 'Modifica' }))
+    const dialog = screen.getByRole('dialog', { name: 'Modifica stato' })
+    expect(within(dialog).getByLabelText('System key')).toBeDisabled()
+    await user.clear(within(dialog).getByLabelText('Nome'))
+    await user.type(within(dialog).getByLabelText('Nome'), 'Nuovissimo')
+    await user.click(within(dialog).getByRole('button', { name: 'Salva' }))
+    await waitFor(() => expect(updateLeadStatus).toHaveBeenCalledWith(4, expect.objectContaining({ name: 'Nuovissimo', system_key: 'new' })))
+  })
+
+  it('configura gli operatori e il round-robin di una provenienza', async () => {
+    currentUserRequest.mockResolvedValue({ id: 1, name: 'Mario', email: 'mario@example.test', role: 'admin', active: true })
+    getOrigins.mockResolvedValue([{ id: 3, code: 'site', name: 'Sito', active: true, operators: [] }])
+    getOrigin.mockResolvedValue({ id: 3, operators: [] })
+    getAdminUsers.mockResolvedValue([{ id: 2, name: 'Anna', role: 'operator', active: true }])
+    const user = userEvent.setup()
+
+    renderApp('/admin/origins')
+    expect(await screen.findByRole('heading', { name: 'Provenienze' })).toBeInTheDocument()
+    await user.click(await screen.findByRole('button', { name: 'Operatori' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Operatori · Sito' })
+    await user.click(within(dialog).getByLabelText('Anna'))
+    await user.click(within(dialog).getByRole('button', { name: 'Salva operatori' }))
+    await waitFor(() => expect(updateOriginOperators).toHaveBeenCalledWith(3, [{ user_id: 2, receives_leads: true, sort_order: 0 }]))
+  })
+
+  it('mostra e riassegna un ricircolo corrente', async () => {
+    currentUserRequest.mockResolvedValue({ id: 1, name: 'Mario', email: 'mario@example.test', role: 'admin', active: true })
+    getRecycles.mockResolvedValue({ data: [{ cycle_id: 20, cycle_number: 2, lead: { id: 10, contact: { first_name: 'Luca', last_name: 'Verdi' } }, origin: { id: 3, name: 'Sito' }, reentered_at: '2026-08-27T10:00:00+02:00', previous_operator: { name: 'Paolo' }, current_operator: null, previous_outcome: { name: 'Non interessato', is_closed: true }, recycle_count: 1, can_reassign: true }], meta: { current_page: 1, last_page: 1, total: 1 } })
+    getOrigin.mockResolvedValue({ id: 3, operators: [{ id: 2, name: 'Anna', active: true, receives_leads: true }] })
+    const user = userEvent.setup()
+    renderApp('/admin/recycles')
+    expect(await screen.findByText('Luca Verdi')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Riassegna' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Riassegna ricircolo' })
+    await user.click(within(dialog).getByRole('button', { name: 'Riassegna' }))
+    await waitFor(() => expect(assignRecycle).toHaveBeenCalledWith(20, '2'))
+  })
+
+  it('gestisce documenti e note di una pratica', async () => {
+    currentUserRequest.mockResolvedValue({ id: 2, name: 'Anna', email: 'anna@example.test', role: 'operator', active: true })
+    getPractice.mockResolvedValue({
+      id: 30,
+      status: 'open',
+      opened_at: '2026-08-27T10:00:00+02:00',
+      documents: [{ id: 40, name: 'Documento identità', status: 'uploaded', has_file: true, original_name: 'identita.pdf' }],
+      notes: [{ id: 50, body: 'Documento atteso', author: { name: 'Anna' }, created_at: '2026-08-27T11:00:00+02:00' }],
+    })
+    const user = userEvent.setup()
+    renderApp('/practices/30')
+
+    expect(await screen.findByRole('heading', { name: 'Gestione pratica' })).toBeInTheDocument()
+    expect(screen.getByText('Documento identità')).toBeInTheDocument()
+    expect(screen.getByText('Documento atteso')).toBeInTheDocument()
+
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: vi.fn(() => 'blob:documento') })
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() })
+    const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    await user.click(screen.getByRole('button', { name: 'Scarica' }))
+    await waitFor(() => expect(downloadDocument).toHaveBeenCalledWith(40))
+    expect(URL.createObjectURL).toHaveBeenCalled()
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:documento')
+    anchorClick.mockRestore()
+
+    await user.type(screen.getByLabelText('Nome documento'), 'Busta paga')
+    await user.click(screen.getByRole('button', { name: 'Aggiungi richiesta' }))
+    await waitFor(() => expect(requestDocument).toHaveBeenCalledWith('30', 'Busta paga'))
+
+    await user.type(screen.getByLabelText('Testo nota'), 'Verifica completata')
+    await user.click(screen.getByRole('button', { name: 'Aggiungi nota' }))
+    await waitFor(() => expect(addPracticeNote).toHaveBeenCalledWith('30', 'Verifica completata'))
+
+    const file = new File(['pdf'], 'documento.pdf', { type: 'application/pdf' })
+    await user.upload(screen.getByLabelText('File Documento identità'), file)
+    await user.click(screen.getByRole('button', { name: 'Carica' }))
+    await waitFor(() => expect(uploadDocument).toHaveBeenCalledWith(40, file))
+
+    await user.selectOptions(screen.getByLabelText('Stato Documento identità'), 'verified')
+    await waitFor(() => expect(updateDocument).toHaveBeenCalledWith(40, { status: 'verified' }))
+  })
+
+  it('avvia sync e risolve un mapping sospeso con rielaborazione', async () => {
+    currentUserRequest.mockResolvedValue({ id: 1, name: 'Mario', email: 'mario@example.test', role: 'admin', active: true })
+    getOrigins.mockResolvedValue([{ id: 3, name: 'Campagne Meta', active: true }])
+    getIntegrationRuns.mockResolvedValue({
+      data: [{ id: 70, run_uuid: 'run-70', trigger: 'manual', status: 'success', started_at: '2026-08-27T10:00:00+02:00', steps: [{ id: 71, source_system: 'meta', status: 'success' }] }],
+      meta: { current_page: 1, last_page: 1, total: 1 },
+    })
+    getIntegrationMappings.mockResolvedValue({
+      data: [],
+      meta: { current_page: 1, last_page: 1, total: 0, mapping_required: [{ source_system: 'meta', external_key: 'campaign-123', external_label: 'Campagna Agosto', import_count: 2, latest_import_id: 90 }] },
+    })
+    const user = userEvent.setup()
+    renderApp('/admin/integrations')
+
+    expect(await screen.findByRole('heading', { name: 'Integrazioni' })).toBeInTheDocument()
+    expect(await screen.findByText('Campagna Agosto')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Sincronizza Site' }))
+    await waitFor(() => expect(startIntegrationSync).toHaveBeenCalledWith('site'))
+
+    await user.click(screen.getByRole('button', { name: 'Configura e rielabora' }))
+    const dialog = screen.getByRole('dialog', { name: 'Risolvi mapping richiesto' })
+    await user.selectOptions(within(dialog).getByLabelText('Provenienza CRM'), '3')
+    await user.click(within(dialog).getByRole('button', { name: 'Crea e rielabora' }))
+    await waitFor(() => expect(createIntegrationMapping).toHaveBeenCalledWith(expect.objectContaining({ source_system: 'meta', external_key: 'campaign-123', lead_origin_id: 3 })))
+    expect(reprocessImport).toHaveBeenCalledWith(90)
+
+    getIntegrationRun.mockResolvedValue(getIntegrationRuns.mock.calls.length ? { id: 70, run_uuid: 'run-70', trigger: 'manual', status: 'success', started_at: '2026-08-27T10:00:00+02:00', steps: [] } : {})
+    await user.click(screen.getByRole('button', { name: 'Dettaglio' }))
+    expect(await screen.findByRole('dialog', { name: 'Dettaglio sincronizzazione' })).toBeInTheDocument()
+    expect(updateIntegrationMapping).not.toHaveBeenCalled()
   })
 })

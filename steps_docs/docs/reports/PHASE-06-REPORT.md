@@ -1,44 +1,56 @@
 # Phase 06 Report — Lead Actions
 
 Data: 2026-08-27  
-Esito: `BLOCKED`
+Esito: `DONE`
 
-## Verifica preliminare richiesta dal piano
+## Gap contrattuale risolto
 
-Prima di costruire il select stato Operator sono stati verificati:
+La verifica preliminare aveva confermato che l'Operator poteva inviare `status_id` ma non ottenere gli stati disponibili. Su nuova autorizzazione esplicita è stata introdotta la modifica backend minima:
 
-- `16-FRONTEND-IMPLEMENTATION-PLAN.md`;
-- `09-NOTES-TASKS-STATUS.md`;
-- il contratto congelato `99-BACKEND-API-REFERENCE.md`;
-- il registro route backend locale, esclusivamente in lettura.
+- `GET /api/v1/lead-statuses` nel gruppo autenticato condiviso;
+- restituisce esclusivamente stati attivi ordinati;
+- accessibile ad Admin e Operator;
+- testata contro accesso anonimo e presenza di stati inattivi;
+- reference backend e copia frontend aggiornate.
 
-## Gap contrattuale
+Nessuna regola della pipeline è stata modificata e nessun ID è hardcodato nel frontend.
 
-Sono disponibili:
+## Ambito completato
 
-- `PATCH /api/v1/leads/{lead}/status`, accessibile agli utenti autenticati secondo ownership/policy;
-- `GET /api/v1/admin/lead-statuses`, protetto da middleware `role:admin`.
+- area `Gestisci lead` condivisa per Admin e Operator;
+- cambio stato tramite collection workflow;
+- aggiunta note al ciclo corrente;
+- creazione task `callback|follow_up`;
+- modifica data task;
+- completamento e annullamento task;
+- accesso alla pratica quando presente;
+- feedback di successo, errori generici e validazioni `422` vicino ai campi;
+- submit disabilitati durante le richieste;
+- Admin mantiene inoltre riassegnazione, gestore e storico amministrativo.
 
-Non è disponibile una collection read-only degli stati attivi accessibile all'Operator. Il dettaglio lead restituisce lo stato corrente e lo storico, ma questi dati non costituiscono l'elenco completo degli stati selezionabili.
+## Revisione card lead
 
-## Perché è bloccante
+La Fase 04 è stata corretta secondo la decisione UI definitiva:
 
-Il payload di cambio stato richiede un `status_id`. Senza una fonte contrattuale degli ID validi, il frontend dovrebbe hardcodare ID, dedurre dati incompleti oppure chiamare un endpoint non autorizzato. Tutte e tre le opzioni violano le istruzioni del progetto.
+- griglia a 4 card su desktop;
+- riduzione progressiva a 3, 2 e 1 card;
+- badge di stato, ricircolo, pratica e non assegnato quando applicabili;
+- informazioni operative e gestore Admin;
+- pulsante `Gestisci` su ogni card;
+- paginazione e filtri sempre backend.
 
-## Risoluzione richiesta al backend
+## Verifiche
 
-È necessaria una delle seguenti estensioni del contratto:
+- frontend `npm run lint`: superato;
+- frontend `npm test`: superato, 2 file e 14 test;
+- frontend `npm run build`: superato;
+- backend test mirati: 7 test e 51 asserzioni superati;
+- controllo browser visuale non disponibile nella sessione; rendering e interazioni coperti con React Testing Library.
 
-1. endpoint autenticato read-only che restituisca gli stati attivi ordinati;
-2. collection `available_statuses`/equivalente nel dettaglio lead, con semantica e campi documentati.
+## Post-MVP
 
-Il nome della soluzione e il payload devono essere definiti nel contratto backend; il frontend non li assume.
+Le notifiche email sono state documentate come evoluzione successiva. Nessuna email è stata implementata.
 
-## Attività non eseguite
+## Versionamento
 
-Per rispettare la regola “una fase alla volta”, non sono state implementate parzialmente note, task o update task. Le fasi 07–13 non sono state avviate.
-
-## Backend e versionamento
-
-- nessun file backend modificato;
-- nessun push eseguito.
+Nessun push eseguito.

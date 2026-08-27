@@ -3,13 +3,18 @@ import { AuthLoadingState } from './components/feedback/AuthLoadingState'
 import { SessionErrorState } from './components/feedback/SessionErrorState'
 import { AppShell } from './components/layout/AppShell'
 import { useAuth } from './hooks/useAuth'
-import { ComingSoonPage } from './pages/ComingSoonPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { ForbiddenPage } from './pages/ForbiddenPage'
 import { LoginPage } from './pages/LoginPage'
 import { LeadsPage } from './pages/LeadsPage'
 import { LeadDetailPage } from './pages/LeadDetailPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { AdminUsersPage } from './pages/admin/AdminUsersPage'
+import { AdminStatusesPage } from './pages/admin/AdminStatusesPage'
+import { AdminOriginsPage } from './pages/admin/AdminOriginsPage'
+import { AdminRecyclesPage } from './pages/admin/AdminRecyclesPage'
+import { PracticePage } from './pages/PracticePage'
+import { AdminIntegrationsPage } from './pages/admin/AdminIntegrationsPage'
 import './App.css'
 
 function ProtectedRoute() {
@@ -45,13 +50,13 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/leads" element={<LeadsPage />} />
           <Route path="/leads/:id" element={<LeadDetailPage />} />
-          <Route path="/practices/:id" element={<ComingSoonPage title="Pratica" description="Documenti e avanzamento della pratica." />} />
+          <Route path="/practices/:id" element={<PracticePage />} />
           <Route element={<AdminRoute />}>
-            <Route path="/admin/users" element={<ComingSoonPage title="Utenti" description="Gestione degli account CRM." />} />
-            <Route path="/admin/statuses" element={<ComingSoonPage title="Stati lead" description="Configurazione del flusso commerciale." />} />
-            <Route path="/admin/origins" element={<ComingSoonPage title="Provenienze" description="Canali e distribuzione agli operatori." />} />
-            <Route path="/admin/recycles" element={<ComingSoonPage title="Ricircoli" description="Lead rientrati e riassegnazioni." />} />
-            <Route path="/admin/integrations" element={<ComingSoonPage title="Integrazioni" description="Sincronizzazioni sito e Meta." />} />
+            <Route path="/admin/users" element={<AdminUsersPage />} />
+            <Route path="/admin/statuses" element={<AdminStatusesPage />} />
+            <Route path="/admin/origins" element={<AdminOriginsPage />} />
+            <Route path="/admin/recycles" element={<AdminRecyclesPage />} />
+            <Route path="/admin/integrations" element={<AdminIntegrationsPage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Route>

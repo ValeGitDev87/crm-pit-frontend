@@ -11,6 +11,7 @@ import { EmptyState } from '../components/feedback/EmptyState'
 import { ErrorState } from '../components/feedback/ErrorState'
 import { LoadingState } from '../components/feedback/LoadingState'
 import { useAuth } from '../hooks/useAuth'
+import { LeadActionsPanel } from '../components/leads/LeadActionsPanel'
 import { formatCurrency, formatDate, formatDateTime, humanize } from '../utils/formatters'
 import { ForbiddenPage } from './ForbiddenPage'
 import { NotFoundPage } from './NotFoundPage'
@@ -145,6 +146,12 @@ export function LeadDetailPage() {
     }
   }, [id])
 
+  const refresh = useCallback(async () => {
+    const data = await getLead(id)
+    setState({ loading: false, data, error: null })
+    return data
+  }, [id])
+
   useEffect(() => {
     const timer = window.setTimeout(load, 0)
     return () => window.clearTimeout(timer)
@@ -193,6 +200,8 @@ export function LeadDetailPage() {
           </dl>
         </Card>
       </div>
+
+      <LeadActionsPanel lead={lead} onChanged={refresh} />
 
       <section className="cycles-section">
         <div className="section-title"><div><p className="eyebrow">Storico completo</p><h2>Cicli del lead</h2></div><Badge tone="neutral">{lead.cycles?.length || 0} cicli</Badge></div>
