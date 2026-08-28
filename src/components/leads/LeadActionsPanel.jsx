@@ -69,8 +69,12 @@ function TaskQuickActions({ task, onChanged, onNotice }) {
   )
 }
 
-export function LeadActionsPanel({ lead, onChanged }) {
+export function LeadActionsPanel({ lead, onChanged, user }) {
   const currentCycle = lead.cycles?.find((cycle) => cycle.cycle_number === lead.current_cycle_number)
+  const assignedOperator = lead.current_assigned_user
+  const taskDescription = user?.role === 'admin'
+    ? `Programma attività per ${assignedOperator?.name || 'l’operatore assegnato'}`
+    : 'Programma una nuova attività'
   const [statuses, setStatuses] = useState([])
   const [statusId, setStatusId] = useState(String(lead.current_status?.id || ''))
   const [statusesError, setStatusesError] = useState('')
@@ -169,15 +173,20 @@ export function LeadActionsPanel({ lead, onChanged }) {
         </Card>
 
         <Card className="action-card action-card-wide">
-          <h3>Nuovo richiamo o follow-up</h3><p>Programma un’attività per l’operatore corrente.</p>
-          <form className="task-form" onSubmit={submitTask}>
-            <label><span>Tipo</span><select value={task.type} onChange={(event) => setTask((current) => ({ ...current, type: event.target.value }))}><option value="callback">Richiamo</option><option value="follow_up">Follow-up</option></select></label>
-            <label><span>Titolo</span><input value={task.title} onChange={(event) => setTask((current) => ({ ...current, title: event.target.value }))} required /></label>
-            <label><span>Scadenza</span><input type="datetime-local" value={task.due_at} onChange={(event) => setTask((current) => ({ ...current, due_at: event.target.value }))} required /></label>
-            <label className="task-note-field"><span>Nota</span><input value={task.note} onChange={(event) => setTask((current) => ({ ...current, note: event.target.value }))} /></label>
-            {taskState.error && <small className="field-error" role="alert">{taskState.error}</small>}
-            <Button type="submit" disabled={taskState.busy || !task.title.trim() || !task.due_at}>{taskState.busy ? 'Creazione…' : 'Crea attività'}</Button>
-          </form>
+          <h3>Programma attività</h3>
+          {assignedOperator ? (
+            <>
+              <p>{taskDescription}</p>
+              <form className="task-form" onSubmit={submitTask}>
+                <label><span>Tipo</span><select value={task.type} onChange={(event) => setTask((current) => ({ ...current, type: event.target.value }))}><option value="callback">Richiamo</option><option value="follow_up">Promemoria</option></select></label>
+                <label><span>Titolo</span><input value={task.title} onChange={(event) => setTask((current) => ({ ...current, title: event.target.value }))} required /></label>
+                <label><span>Scadenza</span><input type="datetime-local" value={task.due_at} onChange={(event) => setTask((current) => ({ ...current, due_at: event.target.value }))} required /></label>
+                <label className="task-note-field"><span>Nota</span><input value={task.note} onChange={(event) => setTask((current) => ({ ...current, note: event.target.value }))} /></label>
+                {taskState.error && <small className="field-error" role="alert">{taskState.error}</small>}
+                <Button type="submit" disabled={taskState.busy || !task.title.trim() || !task.due_at}>{taskState.busy ? 'Creazione…' : 'Crea attività'}</Button>
+              </form>
+            </>
+          ) : <div className="alert alert-warning" role="status">Assegna prima un operatore al lead per programmare un’attività.</div>}
         </Card>
       </div>
 

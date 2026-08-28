@@ -201,7 +201,7 @@ export function LeadDetailPage() {
         </Card>
       </div>
 
-      <LeadActionsPanel lead={lead} onChanged={refresh} />
+      <LeadActionsPanel lead={lead} onChanged={refresh} user={user} />
 
       <section className="cycles-section">
         <div className="section-title"><div><p className="eyebrow">Storico completo</p><h2>Cicli del lead</h2></div><Badge tone="neutral">{lead.cycles?.length || 0} cicli</Badge></div>

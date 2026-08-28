@@ -21,6 +21,12 @@ Task form:
 - note
 - due_at
 
+Mapping UI definitivo dei tipi:
+- `callback` → `Richiamo`;
+- `follow_up` → `Promemoria`.
+
+La form usa il titolo `Programma attività`. L'Operator vede `Programma una nuova attività`; l'Admin vede il nome dell'operatore destinatario. Se il lead non è assegnato, la creazione è nascosta e viene richiesto di assegnare prima un operatore.
+
 Azioni rapide:
 - completa
 - modifica data

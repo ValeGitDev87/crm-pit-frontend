@@ -25,7 +25,7 @@ export function humanize(value) {
     manual: 'Manuale',
     scheduler: 'Pianificata',
     callback: 'Richiamo',
-    follow_up: 'Follow-up',
+    follow_up: 'Promemoria',
     pending: 'In attesa',
     completed: 'Completata',
     cancelled: 'Annullata',

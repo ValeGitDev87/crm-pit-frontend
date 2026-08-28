@@ -371,6 +371,9 @@ describe('autenticazione applicazione', () => {
     expect(await screen.findByRole('heading', { name: 'Luca Verdi' })).toBeInTheDocument()
     expect(screen.getByText('Ciclo #2')).toBeInTheDocument()
     expect(screen.getByText('Primo contatto')).toBeInTheDocument()
+    expect(screen.getByText('Programma attività per Anna')).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Promemoria' })).toHaveValue('follow_up')
+    expect(screen.queryByText(/follow-up/i)).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Riassegna' }))
     const dialog = await screen.findByRole('dialog', { name: 'Riassegna lead' })
     expect(within(dialog).getByRole('option', { name: 'Anna' })).toBeInTheDocument()
@@ -406,6 +409,10 @@ describe('autenticazione applicazione', () => {
     renderApp('/leads/10')
     await screen.findByRole('heading', { name: 'Gestisci lead' })
     await screen.findByRole('option', { name: 'Interessato' })
+    expect(screen.getByText('Programma una nuova attività')).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Promemoria' })).toHaveValue('follow_up')
+    expect(screen.queryByRole('button', { name: 'Riassegna' })).not.toBeInTheDocument()
+    expect(screen.queryByText(/follow-up/i)).not.toBeInTheDocument()
 
     await user.selectOptions(screen.getByLabelText('Stato'), '5')
     await user.click(screen.getByRole('button', { name: 'Aggiorna stato' }))
@@ -420,9 +427,63 @@ describe('autenticazione applicazione', () => {
     await user.click(screen.getByRole('button', { name: 'Crea attività' }))
     await waitFor(() => expect(createLeadTask).toHaveBeenCalledWith(10, expect.objectContaining({ type: 'callback', title: 'Inviare documenti' })))
 
+    await user.selectOptions(screen.getByLabelText('Tipo'), 'follow_up')
+    await user.type(screen.getByLabelText('Titolo'), 'Controllare la pratica')
+    await user.type(screen.getAllByLabelText('Scadenza')[0], '2026-08-31T11:00')
+    await user.click(screen.getByRole('button', { name: 'Crea attività' }))
+    await waitFor(() => expect(createLeadTask).toHaveBeenLastCalledWith(10, expect.objectContaining({ type: 'follow_up', title: 'Controllare la pratica' })))
+
     await user.click(screen.getByRole('button', { name: 'Completa' }))
     await waitFor(() => expect(updateLeadTask).toHaveBeenCalledWith(40, { status: 'completed' }))
     expect(screen.getByRole('link', { name: 'Apri pratica' })).toHaveAttribute('href', '/practices/30')
+  })
+
+  it('consente all’Operator assegnato di creare la pratica del ciclo corrente', async () => {
+    currentUserRequest.mockResolvedValue({ id: 2, name: 'Anna', email: 'anna@example.test', role: 'operator', active: true })
+    getLead.mockResolvedValue({
+      id: 10,
+      contact: { first_name: 'Luca', last_name: 'Verdi' },
+      origin: { id: 3, name: 'Sito' },
+      current_status: { id: 4, name: 'Nuovo', system_key: 'new', is_closed: false },
+      current_assigned_user: { id: 2, name: 'Anna' },
+      current_cycle_number: 1,
+      recycle_count: 0,
+      cycles: [{
+        id: 20, cycle_number: 1, trigger: 'initial', started_at: '2026-08-27T10:00:00+02:00', ended_at: null,
+        assignments: [], status_history: [], notes: [], tasks: [], practice: null,
+      }],
+    })
+    const user = userEvent.setup()
+
+    renderApp('/leads/10')
+    await user.click(await screen.findByRole('button', { name: 'Crea pratica' }))
+
+    await waitFor(() => expect(createPractice).toHaveBeenCalledWith(10))
+    expect(await screen.findByText('Pratica creata correttamente.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Riassegna' })).not.toBeInTheDocument()
+  })
+
+  it('impedisce all’Admin di programmare attività finché il lead non è assegnato', async () => {
+    currentUserRequest.mockResolvedValue({ id: 1, name: 'Mario', email: 'mario@example.test', role: 'admin', active: true })
+    getLead.mockResolvedValue({
+      id: 10,
+      contact: { first_name: 'Luca', last_name: 'Verdi' },
+      origin: { id: 3, name: 'Sito' },
+      current_status: { id: 4, name: 'Nuovo', system_key: 'new', is_closed: false },
+      current_assigned_user: null,
+      current_cycle_number: 1,
+      recycle_count: 0,
+      cycles: [{
+        id: 20, cycle_number: 1, trigger: 'initial', started_at: '2026-08-27T10:00:00+02:00', ended_at: null,
+        assignments: [], status_history: [], notes: [], tasks: [], practice: null,
+      }],
+    })
+
+    renderApp('/leads/10')
+
+    expect(await screen.findByText('Assegna prima un operatore al lead per programmare un’attività.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Crea attività' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Riassegna' })).toBeInTheDocument()
   })
 
   it('consente all’Admin di creare e modificare utenti', async () => {

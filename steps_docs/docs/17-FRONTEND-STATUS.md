@@ -70,3 +70,4 @@ La Fase 06 è stata completata con cambio stato, note, creazione task, modifica 
 - Fase 13 completata il 2026-08-27: audit route/API/errori, suite finale, build produzione e verifica patch Git.
 - Branding definitivo applicato il 2026-08-27: il nome visuale e documentale del CRM è `Prestito in Tasca`.
 - Fix autenticazione locale applicato il 2026-08-27: frontend e backend usano entrambi `localhost`, evitando la separazione dei cookie Sanctum tra `localhost` e `127.0.0.1`.
+- Fix azioni Operator applicato il 2026-08-27: terminologia attività aggiornata a `Richiamo`/`Promemoria`, testo role-aware, task non disponibile sui lead non assegnati e copertura UI per azioni Operator, pratica e riassegnazione Admin.
