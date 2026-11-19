@@ -79,9 +79,8 @@ export function LeadActionsPanel({ lead, onChanged, user }) {
   const [statusId, setStatusId] = useState(String(lead.current_status?.id || ''))
   const [statusesError, setStatusesError] = useState('')
   const [notice, setNotice] = useState('')
-  const [statusState, setStatusState] = useState({ busy: false, error: '' })
   const [note, setNote] = useState('')
-  const [noteState, setNoteState] = useState({ busy: false, error: '' })
+  const [updateState, setUpdateState] = useState({ busy: false, error: '' })
   const [task, setTask] = useState({ type: 'callback', title: '', note: '', due_at: '' })
   const [taskState, setTaskState] = useState({ busy: false, error: '' })
   const [practiceBusy, setPracticeBusy] = useState(false)
@@ -95,32 +94,35 @@ export function LeadActionsPanel({ lead, onChanged, user }) {
     return () => { active = false }
   }, [])
 
-  async function submitStatus(event) {
+  async function submitUpdate(event) {
     event.preventDefault()
-    setStatusState({ busy: true, error: '' })
-    setNotice('')
-    try {
-      await changeLeadStatus(lead.id, statusId)
-      await onChanged()
-      setNotice('Stato aggiornato correttamente.')
-      setStatusState({ busy: false, error: '' })
-    } catch (error) {
-      setStatusState({ busy: false, error: errorFor(error, 'status_id') })
-    }
-  }
+    const cleanNote = note.trim()
+    const statusChanged = statusId !== String(lead.current_status?.id || '')
+    if (!cleanNote && !statusChanged) return
 
-  async function submitNote(event) {
-    event.preventDefault()
-    setNoteState({ busy: true, error: '' })
+    setUpdateState({ busy: true, error: '' })
     setNotice('')
+    let noteSaved = false
+    let operation = cleanNote ? 'note' : 'status'
     try {
-      await addLeadNote(lead.id, note)
+      // Save the note first so a closing status cannot close its current cycle before the note is recorded.
+      if (cleanNote) {
+        await addLeadNote(lead.id, cleanNote)
+        noteSaved = true
+      }
+      if (statusChanged) {
+        operation = 'status'
+        await changeLeadStatus(lead.id, statusId)
+      }
       await onChanged()
       setNote('')
-      setNotice('Nota aggiunta correttamente.')
-      setNoteState({ busy: false, error: '' })
+      setNotice('Aggiornamento salvato correttamente.')
+      setUpdateState({ busy: false, error: '' })
     } catch (error) {
-      setNoteState({ busy: false, error: errorFor(error, 'body') })
+      if (noteSaved) await onChanged()
+      const field = operation === 'status' ? 'status_id' : 'body'
+      const prefix = noteSaved ? 'La nota è stata salvata, ma lo stato non è stato aggiornato. ' : ''
+      setUpdateState({ busy: false, error: `${prefix}${errorFor(error, field)}` })
     }
   }
 
@@ -142,7 +144,7 @@ export function LeadActionsPanel({ lead, onChanged, user }) {
   async function openPractice() {
     setPracticeBusy(true)
     setPracticeError('')
-    try { await createPractice(lead.id); await onChanged(); setNotice('Pratica creata correttamente.') }
+    try { await createPractice(lead.id); const updatedLead = await onChanged(); setStatusId(String(updatedLead.current_status?.id || '')); setNotice('Pratica creata correttamente.') }
     catch (error) { setPracticeError(error.message) }
     finally { setPracticeBusy(false) }
   }
@@ -153,22 +155,14 @@ export function LeadActionsPanel({ lead, onChanged, user }) {
       {notice && <div className="alert alert-success" role="status">{notice}</div>}
       {practiceError && <div className="alert alert-error" role="alert">{practiceError}</div>}
       <div className="manage-grid">
-        <Card className="action-card">
-          <h3>Cambia stato</h3><p>Seleziona uno stato attivo della pipeline.</p>
+        <Card className="action-card action-card-wide lead-update-card">
+          <h3>Aggiornamento commerciale</h3><p>Modifica lo stato, aggiungi una nota oppure salva entrambi con una sola azione.</p>
           {statusesError && <div className="alert alert-error" role="alert">{statusesError}</div>}
-          <form onSubmit={submitStatus}>
-            <label><span>Stato</span><select value={statusId} onChange={(event) => setStatusId(event.target.value)} disabled={statusState.busy || !statuses.length}>{statuses.map((status) => <option key={status.id} value={status.id}>{status.name}</option>)}</select></label>
-            {statusState.error && <small className="field-error" role="alert">{statusState.error}</small>}
-            <Button type="submit" disabled={statusState.busy || !statusId}>{statusState.busy ? 'Aggiornamento…' : 'Aggiorna stato'}</Button>
-          </form>
-        </Card>
-
-        <Card className="action-card">
-          <h3>Aggiungi nota</h3><p>La nota sarà associata al ciclo corrente.</p>
-          <form onSubmit={submitNote}>
-            <label><span>Nota commerciale</span><textarea value={note} onChange={(event) => setNote(event.target.value)} rows="4" required /></label>
-            {noteState.error && <small className="field-error" role="alert">{noteState.error}</small>}
-            <Button type="submit" disabled={noteState.busy || !note.trim()}>{noteState.busy ? 'Salvataggio…' : 'Aggiungi nota'}</Button>
+          <form className="lead-update-form" onSubmit={submitUpdate}>
+            <label><span>Stato</span><select value={statusId} onChange={(event) => setStatusId(event.target.value)} disabled={updateState.busy || !statuses.length}>{statuses.map((status) => <option key={status.id} value={status.id}>{status.name}</option>)}</select></label>
+            <label><span>Nota commerciale</span><textarea value={note} onChange={(event) => setNote(event.target.value)} rows="4" placeholder="Scrivi una nota (facoltativa)" /></label>
+            {updateState.error && <small className="field-error" role="alert">{updateState.error}</small>}
+            <Button type="submit" disabled={updateState.busy || !statusId || (!note.trim() && statusId === String(lead.current_status?.id || ''))}>{updateState.busy ? 'Salvataggio…' : 'Salva aggiornamento'}</Button>
           </form>
         </Card>
 

@@ -71,3 +71,20 @@ La Fase 06 è stata completata con cambio stato, note, creazione task, modifica 
 - Branding definitivo applicato il 2026-08-27: il nome visuale e documentale del CRM è `Prestito in Tasca`.
 - Fix autenticazione locale applicato il 2026-08-27: frontend e backend usano entrambi `localhost`, evitando la separazione dei cookie Sanctum tra `localhost` e `127.0.0.1`.
 - Fix azioni Operator applicato il 2026-08-27: terminologia attività aggiornata a `Richiamo`/`Promemoria`, testo role-aware, task non disponibile sui lead non assegnati e copertura UI per azioni Operator, pratica e riassegnazione Admin.
+- Semplificazione UX finale completata il 2026-09-08: card Cliente/Gestore, rimozione dati ciclo dalla vista operativa, riepilogo unico, form stato+nota unificato, terminologia documenti semplificata e accesso rapido protetto ai documenti. Verifiche finali: frontend 24 test, lint e build passati; backend 131 test/777 asserzioni e Pint passati. Report: `docs/reports/FINAL-UX-SIMPLIFICATION-REPORT.md`.
+- Correzione anteprima documenti completata il 2026-09-08: popup separato dalla card tramite portal e `Vedi` convertito da download forzato ad anteprima protetta PDF/immagine. Frontend: 24 test, lint e build passati.
+- Migliorie da `traduzioni.md` completate il 2026-09-16: traduzione centralizzata degli errori API e di validazione, contrasto e leggibilita dei testi aumentati, planning condiviso Admin/Operator con viste settimanale e mensile per richiami/promemoria aperti. Verifiche: frontend 27 test, lint e build passati; backend 131 test/777 asserzioni e Pint passati. Report: `docs/reports/TRANSLATIONS-PLANNING-REPORT.md`.
+
+## Limite contratto — colore personalizzato degli stati
+
+Data rilevazione: 2026-09-16.
+
+Il contratto backend congelato di `lead_statuses` non contiene un attributo `color`: il campo non esiste nella migration, nel model, nelle request di creazione/modifica e nella resource API. Il frontend non puo quindi salvare o rileggere in modo affidabile un colore scelto dall'Admin.
+
+Risoluzione contrattuale necessaria:
+
+- aggiungere e validare un campo colore persistente nel backend;
+- esporlo nelle API Admin di creazione/modifica/elenco e nella collection read-only degli stati;
+- aggiornare successivamente badge e form frontend per utilizzare il valore restituito.
+
+Non e stato introdotto un workaround locale non persistente, per evitare colori diversi tra utenti, browser e sessioni.

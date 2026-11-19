@@ -17,6 +17,7 @@ vi.mock('./api/leads', () => ({
   getLeads: vi.fn(),
   getLead: vi.fn(),
   getWorkflowStatuses: vi.fn(),
+  getPlanningTasks: vi.fn(),
   changeLeadStatus: vi.fn(),
   addLeadNote: vi.fn(),
   createLeadTask: vi.fn(),
@@ -67,6 +68,7 @@ import {
   createLeadTask,
   getLead,
   getLeads,
+  getPlanningTasks,
   getWorkflowStatuses,
   updateLeadTask,
 } from './api/leads'
@@ -126,6 +128,7 @@ describe('autenticazione applicazione', () => {
       sync_status: [],
     })
     getLeads.mockResolvedValue({ data: [], meta: { current_page: 1, last_page: 1, total: 0 } })
+    getPlanningTasks.mockResolvedValue([])
     getWorkflowStatuses.mockResolvedValue([])
     changeLeadStatus.mockResolvedValue({})
     addLeadNote.mockResolvedValue({})
@@ -275,7 +278,7 @@ describe('autenticazione applicazione', () => {
 
     expect(await screen.findByText('Lead assegnati')).toBeInTheDocument()
     expect(screen.getByText('Luca Verdi')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Luca Verdi/ })).toHaveAttribute('href', '/leads/10')
+    expect(await screen.findByRole('link', { name: /Luca Verdi/ })).toHaveAttribute('href', '/leads/10')
   })
 
   it('renderizza aggregati e stato sync nella dashboard Admin', async () => {
@@ -301,6 +304,29 @@ describe('autenticazione applicazione', () => {
     expect(screen.getByText('Anna Bianchi', { selector: 'strong' })).toBeInTheDocument()
   })
 
+  it('mostra il planning settimanale e mensile a un Operator', async () => {
+    currentUserRequest.mockResolvedValue({ id: 2, name: 'Anna', email: 'anna@example.test', role: 'operator', active: true })
+    getPlanningTasks.mockResolvedValue([{
+      id: 90,
+      lead_id: 10,
+      type: 'callback',
+      title: 'Richiamare per i documenti',
+      contact_name: 'Luca Verdi',
+      status: 'pending',
+      due_at: new Date().toISOString(),
+    }])
+    const user = userEvent.setup()
+
+    renderApp('/planning')
+
+    expect(await screen.findByRole('heading', { name: 'Planning attività' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: /Luca Verdi/ })).toHaveAttribute('href', '/leads/10')
+    expect(screen.getByRole('button', { name: 'Settimana' })).toHaveAttribute('aria-pressed', 'true')
+    await user.click(screen.getByRole('button', { name: 'Mese' }))
+    expect(screen.getByRole('button', { name: 'Mese' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('link', { name: /Planning/ })).toBeInTheDocument()
+  })
+
   it('mostra filtri e paginazione backend nella lista lead Admin', async () => {
     currentUserRequest.mockResolvedValue({ id: 1, name: 'Mario Rossi', email: 'mario@example.test', role: 'admin', active: true })
     getAdminUsers.mockResolvedValue([{ id: 2, name: 'Anna', role: 'operator', active: true }])
@@ -319,15 +345,47 @@ describe('autenticazione applicazione', () => {
       }],
       meta: { current_page: 1, last_page: 2, total: 21 },
     })
+    getLead.mockResolvedValue({
+      id: 10,
+      current_cycle_number: 2,
+      cycles: [{
+        cycle_number: 2,
+        practice: {
+          id: 30,
+          documents: [
+            { id: 40, name: 'Documento identità', status: 'uploaded', has_file: true, original_name: 'identita.pdf' },
+            { id: 41, name: 'Busta paga', status: 'requested', has_file: false },
+          ],
+        },
+      }],
+    })
     const user = userEvent.setup()
 
     renderApp('/leads')
 
     expect(await screen.findByRole('heading', { name: 'Lead' })).toBeInTheDocument()
     expect(await screen.findByText('Luca Verdi')).toBeInTheDocument()
-    expect(screen.getByText('Rientrato x1')).toBeInTheDocument()
-    expect(screen.getByText('Non assegnato')).toBeInTheDocument()
+    const card = screen.getByRole('heading', { name: 'Luca Verdi' }).closest('article')
+    expect(within(card).getByText('Cliente')).toBeInTheDocument()
+    expect(within(card).getByText('Gestore')).toBeInTheDocument()
+    expect(within(card).queryByText(/Rientrato|Ciclo|Ricircol|Ultimo ingresso/i)).not.toBeInTheDocument()
+    expect(within(card).getByText('Non assegnato')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Gestisci' })).toHaveAttribute('href', '/leads/10')
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: vi.fn(() => 'blob:anteprima') })
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() })
+    await user.click(await screen.findByRole('button', { name: 'Vedi documenti (2)' }))
+    const documentsDialog = screen.getByRole('dialog', { name: 'Documenti' })
+    expect(within(card).queryByRole('dialog')).not.toBeInTheDocument()
+    expect(within(documentsDialog).getByText('Stato: Ricevuto')).toBeInTheDocument()
+    expect(within(documentsDialog).getByText('Stato: Da ricevere')).toBeInTheDocument()
+    expect(within(documentsDialog).getAllByRole('button', { name: 'Vedi' })).toHaveLength(1)
+    await user.click(within(documentsDialog).getByRole('button', { name: 'Vedi' }))
+    await waitFor(() => expect(downloadDocument).toHaveBeenCalledWith(40))
+    const previewDialog = screen.getByRole('dialog', { name: 'Anteprima identita.pdf' })
+    expect(within(previewDialog).getByTitle('Anteprima identita.pdf')).toHaveAttribute('src', 'blob:anteprima')
+    await user.click(within(previewDialog).getByRole('button', { name: 'Chiudi anteprima' }))
+    await waitFor(() => expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:anteprima'))
+    await user.click(within(documentsDialog).getByRole('button', { name: 'Chiudi' }))
     await user.click(screen.getByRole('button', { name: 'Successiva' }))
     await waitFor(() => expect(getLeads).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 })))
   })
@@ -369,18 +427,21 @@ describe('autenticazione applicazione', () => {
     renderApp('/leads/10')
 
     expect(await screen.findByRole('heading', { name: 'Luca Verdi' })).toBeInTheDocument()
+    const summaryCard = screen.getByRole('heading', { name: 'Luca Verdi' }).closest('section')
+    expect(within(summaryCard).queryByText(/Ciclo|Ricircol|Primo ingresso|Ultimo ingresso/i)).not.toBeInTheDocument()
+    await user.click(screen.getByText('Mostra storico tecnico'))
     expect(screen.getByText('Ciclo #2')).toBeInTheDocument()
     expect(screen.getByText('Primo contatto')).toBeInTheDocument()
     expect(screen.getByText('Programma attività per Anna')).toBeInTheDocument()
     expect(screen.getByRole('option', { name: 'Promemoria' })).toHaveValue('follow_up')
     expect(screen.queryByText(/follow-up/i)).not.toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Riassegna' }))
-    const dialog = await screen.findByRole('dialog', { name: 'Riassegna lead' })
+    await user.click(screen.getByRole('button', { name: 'Cambia gestore' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Cambia gestore' })
     expect(within(dialog).getByRole('option', { name: 'Anna' })).toBeInTheDocument()
-    await user.click(within(dialog).getByRole('button', { name: 'Riassegna' }))
+    await user.click(within(dialog).getByRole('button', { name: 'Cambia gestore' }))
 
     await waitFor(() => expect(assignLead).toHaveBeenCalledWith(10, '2'))
-    expect(await screen.findByText('Lead riassegnato correttamente.')).toBeInTheDocument()
+    expect(await screen.findByText('Gestore cambiato correttamente.')).toBeInTheDocument()
   })
 
   it('consente all’Operator di cambiare stato, aggiungere note e gestire task', async () => {
@@ -411,16 +472,14 @@ describe('autenticazione applicazione', () => {
     await screen.findByRole('option', { name: 'Interessato' })
     expect(screen.getByText('Programma una nuova attività')).toBeInTheDocument()
     expect(screen.getByRole('option', { name: 'Promemoria' })).toHaveValue('follow_up')
-    expect(screen.queryByRole('button', { name: 'Riassegna' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Cambia gestore|Assegna operatore/ })).not.toBeInTheDocument()
     expect(screen.queryByText(/follow-up/i)).not.toBeInTheDocument()
 
     await user.selectOptions(screen.getByLabelText('Stato'), '5')
-    await user.click(screen.getByRole('button', { name: 'Aggiorna stato' }))
-    await waitFor(() => expect(changeLeadStatus).toHaveBeenCalledWith(10, '5'))
-
     await user.type(screen.getByLabelText('Nota commerciale'), 'Cliente interessato')
-    await user.click(screen.getByRole('button', { name: 'Aggiungi nota' }))
+    await user.click(screen.getByRole('button', { name: 'Salva aggiornamento' }))
     await waitFor(() => expect(addLeadNote).toHaveBeenCalledWith(10, 'Cliente interessato'))
+    expect(changeLeadStatus).toHaveBeenCalledWith(10, '5')
 
     await user.type(screen.getByLabelText('Titolo'), 'Inviare documenti')
     await user.type(screen.getAllByLabelText('Scadenza')[0], '2026-08-30T10:30')
@@ -436,6 +495,56 @@ describe('autenticazione applicazione', () => {
     await user.click(screen.getByRole('button', { name: 'Completa' }))
     await waitFor(() => expect(updateLeadTask).toHaveBeenCalledWith(40, { status: 'completed' }))
     expect(screen.getByRole('link', { name: 'Apri pratica' })).toHaveAttribute('href', '/practices/30')
+  })
+
+  it('salva solo la nota quando lo stato non cambia', async () => {
+    currentUserRequest.mockResolvedValue({ id: 2, name: 'Anna', email: 'anna@example.test', role: 'operator', active: true })
+    getLead.mockResolvedValue({
+      id: 10,
+      contact: { first_name: 'Luca', last_name: 'Verdi' },
+      origin: { id: 3, name: 'Sito' },
+      current_status: { id: 4, name: 'Nuovo', system_key: 'new', is_closed: false },
+      current_assigned_user: { id: 2, name: 'Anna' },
+      current_cycle_number: 1,
+      cycles: [{ id: 20, cycle_number: 1, trigger: 'initial', assignments: [], status_history: [], notes: [], tasks: [], practice: null }],
+    })
+    getWorkflowStatuses.mockResolvedValue([{ id: 4, name: 'Nuovo', system_key: 'new' }])
+    const user = userEvent.setup()
+
+    renderApp('/leads/10')
+    const saveButton = await screen.findByRole('button', { name: 'Salva aggiornamento' })
+    expect(saveButton).toBeDisabled()
+    await user.type(screen.getByLabelText('Nota commerciale'), 'Solo nota')
+    await user.click(saveButton)
+
+    await waitFor(() => expect(addLeadNote).toHaveBeenCalledWith(10, 'Solo nota'))
+    expect(changeLeadStatus).not.toHaveBeenCalled()
+  })
+
+  it('salva solo lo stato quando la nota è vuota', async () => {
+    currentUserRequest.mockResolvedValue({ id: 2, name: 'Anna', email: 'anna@example.test', role: 'operator', active: true })
+    getLead.mockResolvedValue({
+      id: 10,
+      contact: { first_name: 'Luca', last_name: 'Verdi' },
+      origin: { id: 3, name: 'Sito' },
+      current_status: { id: 4, name: 'Nuovo', system_key: 'new', is_closed: false },
+      current_assigned_user: { id: 2, name: 'Anna' },
+      current_cycle_number: 1,
+      cycles: [{ id: 20, cycle_number: 1, trigger: 'initial', assignments: [], status_history: [], notes: [], tasks: [], practice: null }],
+    })
+    getWorkflowStatuses.mockResolvedValue([
+      { id: 4, name: 'Nuovo', system_key: 'new' },
+      { id: 5, name: 'Interessato', system_key: 'interested' },
+    ])
+    const user = userEvent.setup()
+
+    renderApp('/leads/10')
+    await screen.findByRole('option', { name: 'Interessato' })
+    await user.selectOptions(screen.getByLabelText('Stato'), '5')
+    await user.click(screen.getByRole('button', { name: 'Salva aggiornamento' }))
+
+    await waitFor(() => expect(changeLeadStatus).toHaveBeenCalledWith(10, '5'))
+    expect(addLeadNote).not.toHaveBeenCalled()
   })
 
   it('consente all’Operator assegnato di creare la pratica del ciclo corrente', async () => {
@@ -460,7 +569,7 @@ describe('autenticazione applicazione', () => {
 
     await waitFor(() => expect(createPractice).toHaveBeenCalledWith(10))
     expect(await screen.findByText('Pratica creata correttamente.')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Riassegna' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Cambia gestore|Assegna operatore/ })).not.toBeInTheDocument()
   })
 
   it('impedisce all’Admin di programmare attività finché il lead non è assegnato', async () => {
@@ -483,7 +592,7 @@ describe('autenticazione applicazione', () => {
 
     expect(await screen.findByText('Assegna prima un operatore al lead per programmare un’attività.')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Crea attività' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Riassegna' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Assegna operatore' })).toBeInTheDocument()
   })
 
   it('consente all’Admin di creare e modificare utenti', async () => {
@@ -587,7 +696,7 @@ describe('autenticazione applicazione', () => {
     anchorClick.mockRestore()
 
     await user.type(screen.getByLabelText('Nome documento'), 'Busta paga')
-    await user.click(screen.getByRole('button', { name: 'Aggiungi richiesta' }))
+    await user.click(screen.getByRole('button', { name: 'Aggiungi documento' }))
     await waitFor(() => expect(requestDocument).toHaveBeenCalledWith('30', 'Busta paga'))
 
     await user.type(screen.getByLabelText('Testo nota'), 'Verifica completata')

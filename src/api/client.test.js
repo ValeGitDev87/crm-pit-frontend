@@ -70,11 +70,37 @@ describe('apiRequest', () => {
 
     const validationError = await apiRequest('/api/v1/example').catch((error) => error)
     expect(validationError).toBeInstanceOf(ApiError)
+    expect(validationError.message).toBe('I dati inseriti non sono validi.')
     expect(validationError.fieldErrors.email).toEqual(['Credenziali non valide.'])
 
     const throttlingError = await apiRequest('/api/v1/example').catch((error) => error)
     expect(throttlingError).toBeInstanceOf(ApiError)
+    expect(throttlingError.message).toBe('Troppe richieste. Attendi prima di riprovare.')
     expect(throttlingError.status).toBe(429)
     expect(throttlingError.retryAfter).toBe(45)
+  })
+
+  it('traduce i messaggi Laravel generici e di validazione', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(jsonResponse({
+      message: 'The given data was invalid.',
+      errors: {
+        name: ['The name field is required.'],
+        status_id: ['The selected status id is invalid.'],
+      },
+    }, { status: 422 }))
+
+    const error = await apiRequest('/api/v1/example').catch((requestError) => requestError)
+    expect(error.fieldErrors.name).toEqual(['Il campo nome è obbligatorio.'])
+    expect(error.fieldErrors.status_id).toEqual(['Il valore selezionato per stato non è valido.'])
+  })
+
+  it('non espone in inglese regole Laravel non specializzate', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(jsonResponse({
+      message: 'The given data was invalid.',
+      errors: { file: ['The file field must not be greater than 10240 kilobytes.'] },
+    }, { status: 422 }))
+
+    const error = await apiRequest('/api/v1/example').catch((requestError) => requestError)
+    expect(error.fieldErrors.file).toEqual(['Il valore del campo file non è valido.'])
   })
 })

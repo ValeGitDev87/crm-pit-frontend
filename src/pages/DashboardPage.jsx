@@ -25,7 +25,7 @@ const ADMIN_STATS = [
   ['leads', 'Lead globali', 'blue'],
   ['open_leads', 'Lead aperti', 'success'],
   ['closed_leads', 'Lead chiusi', 'neutral'],
-  ['recycled_leads', 'Lead riciclati', 'violet'],
+  ['recycled_leads', 'Clienti già presenti', 'violet'],
   ['unassigned_leads', 'Non assegnati', 'danger'],
   ['open_practices', 'Pratiche aperte', 'orange'],
 ]
@@ -76,14 +76,14 @@ function AdminDashboard({ dashboard }) {
   const originColumns = [
     { key: 'origin', label: 'Provenienza', render: (row) => <strong>{row.origin?.name}</strong> },
     { key: 'leads', label: 'Lead' },
-    { key: 'recycled', label: 'Riciclati' },
+    { key: 'recycled', label: 'Già presenti' },
     { key: 'unassigned', label: 'Non assegnati' },
   ]
   const operatorColumns = [
     { key: 'operator', label: 'Operatore', render: (row) => <strong>{row.operator?.name}</strong> },
     { key: 'leads', label: 'Lead' },
     { key: 'new', label: 'Nuovi' },
-    { key: 'recycled', label: 'Riciclati' },
+    { key: 'recycled', label: 'Già presenti' },
   ]
 
   return (

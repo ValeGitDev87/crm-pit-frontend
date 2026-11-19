@@ -1,3 +1,5 @@
+import { translateErrorMessage, translateFieldErrors } from '../utils/errorTranslations'
+
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '')
 
 const MUTATION_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
@@ -47,7 +49,7 @@ async function readPayload(response) {
 }
 
 function errorMessage(status, payload) {
-  if (payload?.message) return payload.message
+  if (payload?.message) return translateErrorMessage(payload.message, { status })
   if (status === 401) return 'La sessione non è valida o è scaduta.'
   if (status === 403) return 'Non hai i permessi per eseguire questa operazione.'
   if (status === 419) return 'La sessione di sicurezza è scaduta. Riprova.'
@@ -63,7 +65,7 @@ function buildApiError(response, payload) {
 
   return new ApiError(errorMessage(response.status, payload), {
     status: response.status,
-    fieldErrors: response.status === 422 ? payload?.errors || {} : {},
+    fieldErrors: response.status === 422 ? translateFieldErrors(payload?.errors) : {},
     retryAfter: Number.isNaN(retryAfter) ? null : retryAfter,
     payload,
   })

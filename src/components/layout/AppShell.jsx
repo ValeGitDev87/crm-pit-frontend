@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth'
 const SHARED_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: 'D' },
   { to: '/leads', label: 'Lead', operatorLabel: 'I miei lead', icon: 'L' },
+  { to: '/planning', label: 'Planning', icon: 'P' },
 ]
 
 const ADMIN_ITEMS = [

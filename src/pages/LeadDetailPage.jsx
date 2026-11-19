@@ -40,7 +40,7 @@ function MiniTimeline({ items, type }) {
 
 function CycleCard({ cycle, current }) {
   return (
-    <details className="cycle-card" open={current}>
+    <details className="cycle-card">
       <summary>
         <div><strong>Ciclo #{cycle.cycle_number}</strong><span>{humanize(cycle.trigger)} · {formatDateTime(cycle.started_at)}</span></div>
         <div>{current && <Badge tone="blue">Corrente</Badge>}{cycle.final_status && <StatusBadge status={cycle.final_status} />}</div>
@@ -98,6 +98,7 @@ function ReassignmentDialog({ lead, open, onClose, onAssigned }) {
   }, [lead, open])
 
   if (!open) return null
+  const actionLabel = lead.current_assigned_user ? 'Cambia gestore' : 'Assegna operatore'
 
   async function submit(event) {
     event.preventDefault()
@@ -118,13 +119,13 @@ function ReassignmentDialog({ lead, open, onClose, onAssigned }) {
   return (
     <div className="modal-backdrop" role="presentation">
       <form className="modal" role="dialog" aria-modal="true" aria-labelledby="reassign-title" onSubmit={submit}>
-        <h2 id="reassign-title">Riassegna lead</h2>
+        <h2 id="reassign-title">{actionLabel}</h2>
         <p>Gli operatori disponibili provengono dalla configurazione della provenienza {lead.origin.name}.</p>
         {state.error && <div className="alert alert-error" role="alert">{state.error}</div>}
         {state.loading ? <LoadingState label="Caricamento operatori…" /> : operators.length ? (
           <label className="dialog-field"><span>Nuovo operatore</span><select value={selected} onChange={(event) => setSelected(event.target.value)}>{operators.map((operator) => <option key={operator.id} value={operator.id}>{operator.name}</option>)}</select></label>
         ) : <EmptyState title="Nessun operatore eleggibile" description="Configura gli operatori della provenienza prima di riassegnare il lead." />}
-        <div className="modal-actions"><Button type="button" variant="secondary" onClick={onClose} disabled={state.saving}>Annulla</Button><Button type="submit" disabled={state.loading || state.saving || !selected}>{state.saving ? 'Salvataggio…' : 'Riassegna'}</Button></div>
+        <div className="modal-actions"><Button type="button" variant="secondary" onClick={onClose} disabled={state.saving}>Annulla</Button><Button type="submit" disabled={state.loading || state.saving || !selected}>{state.saving ? 'Salvataggio…' : actionLabel}</Button></div>
       </form>
     </div>
   )
@@ -167,46 +168,41 @@ export function LeadDetailPage() {
 
   async function handleAssigned() {
     await load()
-    setNotice('Lead riassegnato correttamente.')
+    setNotice(lead.current_assigned_user ? 'Gestore cambiato correttamente.' : 'Operatore assegnato correttamente.')
   }
 
   return (
     <>
       <Link className="back-link" to="/leads">← Torna ai lead</Link>
       <header className="lead-header">
-        <div><p className="eyebrow">Lead #{lead.id}</p><h1>{contactName}</h1><div className="lead-badges"><StatusBadge status={lead.current_status} /><Badge tone="neutral">{lead.origin?.name}</Badge>{lead.recycle_count > 0 && <Badge tone="violet">Rientrato x{lead.recycle_count}</Badge>}</div></div>
-        {user?.role === 'admin' && <Button type="button" variant="secondary" onClick={() => setReassignOpen(true)}>Riassegna</Button>}
+        <div><p className="eyebrow">Lead #{lead.id}</p></div>
+        {user?.role === 'admin' && <Button type="button" variant="secondary" onClick={() => setReassignOpen(true)}>{lead.current_assigned_user ? 'Cambia gestore' : 'Assegna operatore'}</Button>}
       </header>
       {notice && <div className="alert alert-success" role="status">{notice}</div>}
 
-      <div className="lead-overview">
-        <Card className="detail-card">
-          <div className="detail-card-heading"><h2>Anagrafica</h2></div>
-          <dl className="info-grid">
-            <InfoItem label="Email">{lead.contact?.email}</InfoItem>
-            <InfoItem label="Telefono">{lead.contact?.phone}</InfoItem>
-            <InfoItem label="Data di nascita">{formatDate(lead.contact?.birth_date)}</InfoItem>
-            <InfoItem label="Professione">{lead.contact?.profession}</InfoItem>
-            <InfoItem label="Residenza">{lead.contact?.residence}</InfoItem>
-          </dl>
-        </Card>
-        <Card className="detail-card">
-          <div className="detail-card-heading"><h2>Situazione corrente</h2></div>
-          <dl className="info-grid">
-            <InfoItem label="Operatore">{lead.current_assigned_user?.name || <Badge tone="danger">Non assegnato</Badge>}</InfoItem>
-            <InfoItem label="Ciclo corrente">#{lead.current_cycle_number}</InfoItem>
-            <InfoItem label="Primo ingresso">{formatDateTime(lead.first_received_at)}</InfoItem>
-            <InfoItem label="Ultimo ingresso">{formatDateTime(lead.last_received_at)}</InfoItem>
-          </dl>
-        </Card>
-      </div>
+      <Card className="detail-card lead-summary-card">
+        <div className="lead-summary-heading"><div><h1>{contactName}</h1><div className="lead-badges"><StatusBadge status={lead.current_status} /><Badge tone="neutral">{lead.origin?.name}</Badge></div></div></div>
+        <dl className="info-grid lead-summary-grid">
+          <InfoItem label="Stato">{lead.current_status?.name}</InfoItem>
+          <InfoItem label="Provenienza">{lead.origin?.name}</InfoItem>
+          <InfoItem label="Gestore">{lead.current_assigned_user?.name || <Badge tone="danger">Non assegnato</Badge>}</InfoItem>
+          <InfoItem label="Email">{lead.contact?.email}</InfoItem>
+          <InfoItem label="Telefono">{lead.contact?.phone}</InfoItem>
+          <InfoItem label="Data di nascita">{formatDate(lead.contact?.birth_date)}</InfoItem>
+          <InfoItem label="Professione">{lead.contact?.profession}</InfoItem>
+          <InfoItem label="Residenza">{lead.contact?.residence}</InfoItem>
+        </dl>
+      </Card>
 
       <LeadActionsPanel lead={lead} onChanged={refresh} user={user} />
 
-      <section className="cycles-section">
-        <div className="section-title"><div><p className="eyebrow">Storico completo</p><h2>Cicli del lead</h2></div><Badge tone="neutral">{lead.cycles?.length || 0} cicli</Badge></div>
-        {lead.cycles?.length ? lead.cycles.map((cycle) => <CycleCard key={cycle.id} cycle={cycle} current={cycle.cycle_number === lead.current_cycle_number} />) : <EmptyState title="Nessun ciclo disponibile" description="Il backend non ha restituito cicli per questo lead." />}
-      </section>
+      <details className="technical-history">
+        <summary>Mostra storico tecnico</summary>
+        <section className="cycles-section">
+          <div className="section-title"><div><p className="eyebrow">Sezione avanzata</p><h2>Storico cicli e assegnazioni</h2></div></div>
+          {lead.cycles?.length ? lead.cycles.map((cycle) => <CycleCard key={cycle.id} cycle={cycle} current={cycle.cycle_number === lead.current_cycle_number} />) : <EmptyState title="Nessuno storico disponibile" description="Il backend non ha restituito dati storici per questo lead." />}
+        </section>
+      </details>
 
       <ReassignmentDialog lead={lead} open={reassignOpen} onClose={() => setReassignOpen(false)} onAssigned={handleAssigned} />
     </>

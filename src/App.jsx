@@ -14,6 +14,7 @@ import { AdminStatusesPage } from './pages/admin/AdminStatusesPage'
 import { AdminOriginsPage } from './pages/admin/AdminOriginsPage'
 import { AdminRecyclesPage } from './pages/admin/AdminRecyclesPage'
 import { PracticePage } from './pages/PracticePage'
+import { PlanningPage } from './pages/PlanningPage'
 import { AdminIntegrationsPage } from './pages/admin/AdminIntegrationsPage'
 import './App.css'
 
@@ -50,6 +51,7 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/leads" element={<LeadsPage />} />
           <Route path="/leads/:id" element={<LeadDetailPage />} />
+          <Route path="/planning" element={<PlanningPage />} />
           <Route path="/practices/:id" element={<PracticePage />} />
           <Route element={<AdminRoute />}>
             <Route path="/admin/users" element={<AdminUsersPage />} />

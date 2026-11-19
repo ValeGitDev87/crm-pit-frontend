@@ -55,3 +55,38 @@ export async function updateLeadTask(taskId, changes) {
   })
   return response?.data ?? response
 }
+
+export async function getPlanningTasks() {
+  const leads = []
+  let page = 1
+  let lastPage = 1
+
+  while (page <= lastPage) {
+    const result = await getLeads({ page, per_page: 100 })
+    leads.push(...result.data)
+    lastPage = Number(result.meta.last_page || 1)
+    page += 1
+  }
+
+  const details = []
+  for (let index = 0; index < leads.length; index += 8) {
+    const batch = await Promise.allSettled(leads.slice(index, index + 8).map((lead) => getLead(lead.id)))
+    batch.forEach((result) => {
+      if (result.status === 'fulfilled') details.push(result.value)
+    })
+  }
+
+  return details.flatMap((lead) => {
+    const cycle = lead.cycles?.find((item) => item.cycle_number === lead.current_cycle_number)
+    const contactName = [lead.contact?.first_name, lead.contact?.last_name].filter(Boolean).join(' ') || `Lead #${lead.id}`
+    return (cycle?.tasks || [])
+      .filter((task) => task.status === 'pending' && task.due_at)
+      .map((task) => ({
+        ...task,
+        lead_id: lead.id,
+        contact_name: contactName,
+        origin_name: lead.origin?.name || '',
+        operator_name: lead.current_assigned_user?.name || '',
+      }))
+  }).sort((first, second) => new Date(first.due_at) - new Date(second.due_at))
+}
